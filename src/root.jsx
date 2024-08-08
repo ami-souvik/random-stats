@@ -1,7 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import QForm from "./layout/QForm";
-import Record from "./layout/Record";
 import Input from "./primitive/Input";
 import Button from "./primitive/Button";
 import { generateRandomStats } from "./helpers/generator";
@@ -17,6 +16,7 @@ export default function Root() {
         formState: { errors },
     } = useForm();
     const questions = useSelector((state) => state.data.questions);
+    const prefix = [{ title: "Full Name" }, { title: "Email" }, { title: "Please specify your gender" }]
     const generation = useSelector((state) => state.data.generation);
     const generate = ({ count }) => {
         dispatch(setGeneration(generateRandomStats(questions, Number(count))))
@@ -31,7 +31,7 @@ export default function Root() {
     }
     const csvmaker = () => {
         const csvRows = [];
-        csvRows.push(questions.map(q => q.title).join(','));
+        csvRows.push([...prefix, ...questions].map(q => q.title).join(','));
         generation.forEach(row => {
             csvRows.push(row.join(','))
         })
