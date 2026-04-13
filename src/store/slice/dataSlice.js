@@ -6,7 +6,8 @@ export const initialState = {
     { id: '2', title: "Email", type: 'email' },
     { id: '3', title: "Gender", type: 'choices', choices: ['Male', 'Female'] }
   ],
-  generation: []
+  generation: [],
+  count: 20
 };
 
 // Helper for generating unique IDs for fields
@@ -19,20 +20,25 @@ export const configSlice = createSlice({
     setQuestions: (state, action) => {
       state.questions = [...state.questions, { ...action.payload, id: generateId() }]
     },
+    updateQuestion: (state, action) => {
+      const { index, data } = action.payload;
+      const existingId = state.questions[index].id;
+      state.questions[index] = { ...data, id: existingId };
+    },
     deleteQuestion: (state, action) => {
       const index = action.payload;
       state.questions.splice(index, 1);
-      // Also update generation if it exists to remove the corresponding column
-      if (state.generation.length > 0) {
-        state.generation = state.generation.map(row => {
-          const newRow = [...row];
-          newRow.splice(index, 1);
-          return newRow;
-        });
-      }
     },
     setGeneration: (state, action) => {
       state.generation = action.payload
+    },
+    setCount: (state, action) => {
+      state.count = action.payload;
+    },
+    setBulkSchema: (state, action) => {
+      const { questions, count } = action.payload;
+      if (questions) state.questions = questions;
+      if (count) state.count = count;
     },
     reorderQuestions: (state, action) => {
       const { oldIndex, newIndex } = action.payload;
@@ -40,20 +46,18 @@ export const configSlice = createSlice({
       const [removed] = questions.splice(oldIndex, 1);
       questions.splice(newIndex, 0, removed);
       state.questions = questions;
-
-      // Reorder the generation data columns as well
-      if (state.generation.length > 0) {
-        state.generation = state.generation.map(row => {
-          const newRow = [...row];
-          const [removedVal] = newRow.splice(oldIndex, 1);
-          newRow.splice(newIndex, 0, removedVal);
-          return newRow;
-        });
-      }
     }
   }
 });
 
-export const { setQuestions, deleteQuestion, setGeneration, reorderQuestions } = configSlice.actions;
+export const { 
+  setQuestions, 
+  updateQuestion, 
+  deleteQuestion, 
+  setGeneration, 
+  reorderQuestions,
+  setCount,
+  setBulkSchema
+} = configSlice.actions;
 
 export const dataReducer = configSlice.reducer;
