@@ -5,27 +5,27 @@ import storage from 'redux-persist/lib/storage';
 
 const createNoopStorage = () => {
   return {
-    getItem(_key) {
+    getItem(_key: string) {
       return Promise.resolve(null);
     },
-    setItem(_key, value) {
+    setItem(_key: string, value: any) {
       return Promise.resolve(value);
     },
-    removeItem(_key) {
+    removeItem(_key: string) {
       return Promise.resolve();
     },
   };
 };
 
-const _storage = typeof window !== "undefined" ? storage : createNoopStorage();
+const _storage = typeof window !== 'undefined' ? storage : createNoopStorage();
 
 const reducers = combineReducers({
-  data: dataReducer
+  data: dataReducer,
 });
 
 const persistConfig = {
   key: 'root',
-  storage: _storage
+  storage: _storage,
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);
@@ -41,3 +41,6 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

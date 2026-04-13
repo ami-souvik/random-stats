@@ -11,7 +11,11 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: #000;
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-family:
+    var(--font-sans),
+    system-ui,
+    -apple-system,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -20,7 +24,7 @@ body {
   .glass-card {
     @apply bg-white/[0.03] border border-white/10 rounded-xl;
   }
-  
+
   .premium-button {
     @apply px-4 py-2 bg-white text-black rounded-lg font-medium text-sm transition-all hover:bg-white/90 active:scale-95 disabled:opacity-50;
   }
