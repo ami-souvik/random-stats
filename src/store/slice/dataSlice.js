@@ -1,36 +1,59 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 export const initialState = {
-  questions: [],
+  questions: [
+    { id: '1', title: "Full Name", type: 'name' },
+    { id: '2', title: "Email", type: 'email' },
+    { id: '3', title: "Gender", type: 'choices', choices: ['Male', 'Female'] }
+  ],
   generation: []
 };
+
+// Helper for generating unique IDs for fields
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const configSlice = createSlice({
   name: 'data',
   initialState,
   reducers: {
     setQuestions: (state, action) => {
-      state.questions = [...state.questions, action.payload]
+      state.questions = [...state.questions, { ...action.payload, id: generateId() }]
     },
     deleteQuestion: (state, action) => {
-      state.questions.splice(action.payload, 1)
-      if(action.payload < state.generation.length)
-      state.generation = state.generation.map(row => {
-        row.splice(action.payload, 1)
-        return row
-      })
+      const index = action.payload;
+      state.questions.splice(index, 1);
+      // Also update generation if it exists to remove the corresponding column
+      if (state.generation.length > 0) {
+        state.generation = state.generation.map(row => {
+          const newRow = [...row];
+          newRow.splice(index, 1);
+          return newRow;
+        });
+      }
     },
     setGeneration: (state, action) => {
       state.generation = action.payload
+    },
+    reorderQuestions: (state, action) => {
+      const { oldIndex, newIndex } = action.payload;
+      const questions = [...state.questions];
+      const [removed] = questions.splice(oldIndex, 1);
+      questions.splice(newIndex, 0, removed);
+      state.questions = questions;
+
+      // Reorder the generation data columns as well
+      if (state.generation.length > 0) {
+        state.generation = state.generation.map(row => {
+          const newRow = [...row];
+          const [removedVal] = newRow.splice(oldIndex, 1);
+          newRow.splice(newIndex, 0, removedVal);
+          return newRow;
+        });
+      }
     }
   }
 });
 
-export const { setQuestions, deleteQuestion, setGeneration } = configSlice.actions;
-
-// The function below is called a selector and allows us to select a value from
-// the state. Selectors can also be defined inline where they're used instead of
-// in the slice file. For example: `useSelector((state: RootState) => state.folio.value)`
-export const selectconfig = (state) => state.config;
+export const { setQuestions, deleteQuestion, setGeneration, reorderQuestions } = configSlice.actions;
 
 export const dataReducer = configSlice.reducer;

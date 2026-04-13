@@ -18,15 +18,36 @@ export function generateNameNEmail() {
 export function generateRandomStats(questions, num) {
     var generation = []
     for(let i=0; i<num; i++) {
-        const { fullname, email, gender } = generateNameNEmail()
-        generation.push([
-            fullname,
-            email,
-            gender,
-            ...questions.map(q => {
-                return q.choices[Math.floor((Math.random() * q.choices.length))]
+        // We generate a "base" person for each row if needed by name/email/gender fields
+        const person = generateNameNEmail()
+        
+        generation.push(
+            questions.map(q => {
+                switch(q.type) {
+                    case 'name':
+                        return person.fullname;
+                    case 'email':
+                        return person.email;
+                    case 'gender':
+                        // If it's the default gender choice, we can use the person's gender 
+                        // or just random from choices. Let's use person's gender for consistency if it's the default.
+                        if (q.title === 'Gender' && q.choices?.includes('Male')) {
+                             return person.gender;
+                        }
+                        return q.choices[Math.floor((Math.random() * q.choices.length))];
+                    case 'number':
+                        const min = Number(q.min) || 0;
+                        const max = Number(q.max) || 100;
+                        const multiplier = Number(q.multiplier) || 1;
+                        return Math.floor(Math.random() * (max - min + 1) + min) * multiplier;
+                    case 'auto_number':
+                        return (q.prefix || '') + (i + 1);
+                    default:
+                        if (!q.choices || q.choices.length === 0) return '';
+                        return q.choices[Math.floor((Math.random() * q.choices.length))]
+                }
             })
-        ])
+        )
     }
     return generation;
 }
