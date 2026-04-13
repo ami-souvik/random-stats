@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #000;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/[0.03] border border-white/10 rounded-xl;
+  }
+  
+  .premium-button {
+    @apply px-4 py-2 bg-white text-black rounded-lg font-medium text-sm transition-all hover:bg-white/90 active:scale-95 disabled:opacity-50;
+  }
+
+  .secondary-button {
+    @apply px-4 py-2 bg-transparent border border-white/20 text-white rounded-lg font-medium text-sm transition-all hover:bg-white/5 active:scale-95;
+  }
+
+  .premium-input {
+    @apply bg-white/[0.02] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/20;
+  }
+
+  .section-label {
+    @apply text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold font-sans;
+  }
+
+  .serif-heading {
+    @apply font-serif italic text-white/90;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
