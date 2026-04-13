@@ -25,6 +25,16 @@ export const configSlice = createSlice({
       const existingId = state.questions[index].id;
       state.questions[index] = { ...data, id: existingId };
     },
+    cloneQuestion: (state, action) => {
+      const index = action.payload;
+      const questionToClone = state.questions[index];
+      const clonedQuestion = { 
+        ...questionToClone, 
+        id: generateId(), 
+        title: `${questionToClone.title} (Copy)` 
+      };
+      state.questions.splice(index + 1, 0, clonedQuestion);
+    },
     deleteQuestion: (state, action) => {
       const index = action.payload;
       state.questions.splice(index, 1);
@@ -53,6 +63,7 @@ export const configSlice = createSlice({
 export const { 
   setQuestions, 
   updateQuestion, 
+  cloneQuestion,
   deleteQuestion, 
   setGeneration, 
   reorderQuestions,

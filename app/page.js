@@ -3,10 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Download, Trash2, Database, ListPlus, Wand2, X, FileSpreadsheet, Layers, GripVertical, Copy, Check, RotateCcw, Share2, Link as LinkIcon } from 'lucide-react';
+import { Plus, Download, Trash2, Database, ListPlus, Wand2, X, FileSpreadsheet, Layers, GripVertical, Copy, Check, RotateCcw, Share2, Link as LinkIcon, Files } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm, Controller } from 'react-hook-form';
-import { setQuestions, updateQuestion, deleteQuestion, setGeneration, reorderQuestions, setCount, setBulkSchema } from '@/src/store/slice/dataSlice';
+import { setQuestions, updateQuestion, cloneQuestion, deleteQuestion, setGeneration, reorderQuestions, setCount, setBulkSchema } from '@/src/store/slice/dataSlice';
 import { generateRandomStats } from '@/src/helpers/generator';
 import * as XLSX from 'xlsx';
 
@@ -102,7 +102,7 @@ const SortableHeader = ({ q }) => {
   );
 };
 
-const SortableSchemaItem = ({ q, index, onDelete, onEdit, isEditing }) => {
+const SortableSchemaItem = ({ q, index, onDelete, onEdit, onClone, isEditing }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: q.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : 'auto', opacity: isDragging ? 0.5 : 1 };
   return (
@@ -112,7 +112,14 @@ const SortableSchemaItem = ({ q, index, onDelete, onEdit, isEditing }) => {
         <span className="text-[10px] text-white/20 font-mono flex-shrink-0 uppercase">{q.type === 'number' ? '#' : q.type === 'auto_number' ? 'SN' : q.type === 'name' ? 'NM' : q.type === 'email' ? '@' : 'ABC'}</span>
         <span className="text-xs truncate text-white/70">{q.title}</span>
       </div>
-      <button onClick={(e) => { e.stopPropagation(); onDelete(index); }} className="text-white/20 hover:text-white transition-colors ml-2"><X size={12} /></button>
+      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={(e) => { e.stopPropagation(); onClone(index); }} title="Clone field" className="text-white/20 hover:text-white transition-colors">
+          <Files size={12} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onDelete(index); }} title="Delete field" className="text-white/20 hover:text-white transition-colors">
+          <X size={12} />
+        </button>
+      </div>
     </motion.div>
   );
 };
@@ -120,7 +127,6 @@ const SortableSchemaItem = ({ q, index, onDelete, onEdit, isEditing }) => {
 function HomeContent() {
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
-  const router = useRouter();
   
   const questions = useSelector((state) => state.data.questions);
   const generation = useSelector((state) => state.data.generation);
@@ -145,11 +151,9 @@ function HomeContent() {
     defaultValues: { count: rowCount }
   });
 
-  // Handle URL Parameters on Mount
   useEffect(() => {
     const s = searchParams.get('s');
     const c = searchParams.get('c');
-    
     if (s || c) {
       try {
         let decodedQuestions = null;
@@ -157,12 +161,7 @@ function HomeContent() {
           const jsonStr = atob(decodeURIComponent(s));
           decodedQuestions = JSON.parse(jsonStr);
         }
-        
-        dispatch(setBulkSchema({
-          questions: decodedQuestions,
-          count: c ? Number(c) : rowCount
-        }));
-        
+        dispatch(setBulkSchema({ questions: decodedQuestions, count: c ? Number(c) : rowCount }));
         if (c) setGValue('count', Number(c));
       } catch (e) {
         console.error("Failed to parse shared configuration", e);
@@ -170,7 +169,6 @@ function HomeContent() {
     }
   }, []);
 
-  // Reactive Generation Lifecycle
   useEffect(() => {
     if (questions.length > 0) {
       const gData = generateRandomStats(questions, rowCount);
@@ -180,7 +178,6 @@ function HomeContent() {
 
   const onAddOrUpdateField = (data) => {
     if (!data.title) return;
-    
     let field = { title: data.title, type: data.type };
     if (data.type === 'choices') field.choices = data.choices.split('\n').map(c => c.trim()).filter(Boolean);
     else if (data.type === 'number') { field.min = data.min; field.max = data.max; field.multiplier = data.multiplier; }
@@ -244,7 +241,6 @@ function HomeContent() {
 
   return (
     <div className="flex h-full overflow-hidden bg-[#050505]">
-      {/* Sidebar */}
       <aside className="w-80 border-r border-white/5 flex flex-col shrink-0 bg-black/40 backdrop-blur-xl">
         <div className="p-5 border-b border-white/5">
           <h2 className="text-lg font-serif italic text-white/80">{editingIndex !== null ? 'Modify Field' : 'Design Schema'}</h2>
@@ -297,7 +293,17 @@ function HomeContent() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={questions.map(q => q.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
-                  {questions.map((q, idx) => (<SortableSchemaItem key={q.id} q={q} index={idx} onDelete={(i) => { if (editingIndex === i) setEditingIndex(null); dispatch(deleteQuestion(i)); }} onEdit={startEditing} isEditing={editingIndex === idx} />))}
+                  {questions.map((q, idx) => (
+                    <SortableSchemaItem 
+                      key={q.id} 
+                      q={q} 
+                      index={idx} 
+                      onDelete={(i) => { if (editingIndex === i) setEditingIndex(null); dispatch(deleteQuestion(i)); }} 
+                      onEdit={startEditing} 
+                      onClone={(i) => dispatch(cloneQuestion(i))}
+                      isEditing={editingIndex === idx} 
+                    />
+                  ))}
                 </div>
               </SortableContext>
             </DndContext>
@@ -310,21 +316,16 @@ function HomeContent() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-grow flex flex-col min-w-0 bg-black">
         <div className="px-6 py-4 flex justify-between items-center border-b border-white/5 bg-black/40 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-medium text-white/70">Engine Online</span>
-            <button 
-              onClick={handleShare}
-              className={`ml-2 px-3 py-1 rounded-full border border-white/5 text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-white/5 transition-all ${shared ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}
-            >
+            <button onClick={handleShare} className={`ml-2 px-3 py-1 rounded-full border border-white/5 text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-white/5 transition-all ${shared ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}>
               {shared ? <Check size={10} /> : <LinkIcon size={10} />}
               {shared ? 'Link Copied' : 'Share Schema'}
             </button>
           </div>
-          
           <div className="flex gap-2">
             <button onClick={handleCopyTable} className={`secondary-button !py-1.5 !px-3 flex items-center gap-2 transition-all ${copied ? 'border-green-500/50 text-green-400' : ''}`}>
               {copied ? <Check size={14} /> : <Copy size={14} />} <span className="text-xs">{copied ? 'Copied' : 'Copy for Sheets'}</span>
