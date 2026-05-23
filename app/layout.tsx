@@ -1,19 +1,33 @@
 import './globals.css';
-import { Inter, Instrument_Serif } from 'next/font/google';
+import {
+  Poppins as FontPoppins,
+  Habibi as FontHabibi,
+  Libre_Baskerville as FontLibre_Baskerville,
+  Geist_Mono as FontGeist_Mono,
+} from "next/font/google";
 import Providers from './providers';
+import HeroBanner from './HeroBanner';
 import { Metadata } from 'next';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
+export const defaultFont = FontPoppins({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: ['400'],
-  style: ['italic', 'normal'],
-  variable: '--font-serif',
+export const serifFont = FontLibre_Baskerville({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400"],
 });
+
+export const monoFont = FontGeist_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+});
+
+export const fontClass = `${defaultFont.variable} ${serifFont.variable} ${monoFont.variable}`;
+
 
 export const metadata: Metadata = {
   title: 'Random Stats | Compact Data Generation',
@@ -22,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable} dark`}>
+    <html lang="en" className={`${fontClass} dark`}>
       <body className="bg-black text-white antialiased font-sans">
         <Providers>
           <div className="flex flex-col h-screen">
@@ -30,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <h1 className="text-xl font-serif italic tracking-tight">RandomStats</h1>
               <div className="section-label">Synthetic Data Engine</div>
             </header>
+            <HeroBanner />
             <main className="flex-grow overflow-hidden">{children}</main>
           </div>
         </Providers>

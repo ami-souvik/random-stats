@@ -19,9 +19,25 @@ interface DataState {
 
 export const initialState: DataState = {
   questions: [
-    { id: '1', title: 'Full Name', type: 'name' },
-    { id: '2', title: 'Email', type: 'email' },
-    { id: '3', title: 'Gender', type: 'choices', choices: ['Male', 'Female'] },
+    { id: '1', title: 'Employee ID', type: 'auto_number', prefix: 'EMP-' },
+    { id: '2', title: 'Full Name', type: 'name' },
+    { id: '3', title: 'Email', type: 'email' },
+    {
+      id: '4',
+      title: 'Department',
+      type: 'choices',
+      choices: ['Engineering', 'Marketing', 'Sales', 'HR', 'Finance', 'Operations'],
+    },
+    {
+      id: '5',
+      title: 'Designation',
+      type: 'choices',
+      choices: ['Manager', 'Senior Engineer', 'Junior Engineer', 'Team Lead', 'Director', 'Analyst'],
+    },
+    { id: '6', title: 'Basic Salary', type: 'number', min: 40, max: 120, multiplier: 1000 },
+    { id: '7', title: 'HRA', type: 'number', min: 10, max: 40, multiplier: 1000 },
+    { id: '8', title: 'PF Deduction', type: 'number', min: 5, max: 15, multiplier: 1000 },
+    { id: '9', title: 'PTAX', type: 'choices', choices: ['200', '300', '400', '500'] },
   ],
   generation: [],
   count: 20,

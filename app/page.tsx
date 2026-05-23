@@ -16,6 +16,7 @@ import {
   Link as LinkIcon,
   Files,
   Layers,
+  Shuffle,
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm, Controller, Control } from 'react-hook-form';
@@ -133,9 +134,10 @@ interface TextAreaProps {
   name: string;
   control: Control<any>;
   placeholder?: string;
+  hint?: string;
 }
 
-const TextArea = ({ label, name, control, placeholder }: TextAreaProps) => (
+const TextArea = ({ label, name, control, placeholder, hint }: TextAreaProps) => (
   <div className="space-y-1.5">
     {label && <label className="section-label block">{label}</label>}
     <Controller
@@ -150,6 +152,7 @@ const TextArea = ({ label, name, control, placeholder }: TextAreaProps) => (
         />
       )}
     />
+    {hint && <p className="text-[10px] text-white/30 font-sans mt-0.5">{hint}</p>}
   </div>
 );
 
@@ -227,7 +230,20 @@ const SortableSchemaItem = ({
         >
           <GripVertical size={12} />
         </div>
-        <span className="text-[10px] text-white/20 font-mono flex-shrink-0 uppercase">
+        <span
+          className="text-[10px] text-white/20 font-mono flex-shrink-0 uppercase cursor-help"
+          title={
+            q.type === 'number'
+              ? 'Logic Number: random value between min/max × multiplier'
+              : q.type === 'auto_number'
+                ? 'Auto-Serial: auto-incrementing ID with optional prefix'
+                : q.type === 'name'
+                  ? 'Full Name: randomly generated person name'
+                  : q.type === 'email'
+                    ? 'Email: randomly generated email address'
+                    : 'Multiple Choice: randomly picked from your defined options'
+          }
+        >
           {q.type === 'number'
             ? '#'
             : q.type === 'auto_number'
@@ -301,6 +317,9 @@ function HomeContent() {
   });
 
   const selectedType = watchQ('type');
+  const minVal = Number(watchQ('min'));
+  const maxVal = Number(watchQ('max'));
+  const multiplierVal = Number(watchQ('multiplier')) || 1;
 
   const { control: gControl, setValue: setGValue } = useForm({
     defaultValues: { count: rowCount },
@@ -336,7 +355,7 @@ function HomeContent() {
     let field: Omit<Question, 'id'> = { title: data.title, type: data.type };
     if (data.type === 'choices')
       field.choices = data.choices
-        .split('\n')
+        .split(/[,\n]+/)
         .map((c: string) => c.trim())
         .filter(Boolean);
     else if (data.type === 'number') {
@@ -368,7 +387,7 @@ function HomeContent() {
     resetQ({
       type: field.type,
       title: field.title,
-      choices: field.choices ? field.choices.join('\n') : '',
+      choices: field.choices ? field.choices.join(', ') : '',
       min: field.min || 0,
       max: field.max || 100,
       multiplier: field.multiplier || 1,
@@ -409,9 +428,15 @@ function HomeContent() {
     }
   };
 
+  const handleRegenerate = () => {
+    if (questions.length > 0) {
+      dispatch(setGeneration(generateRandomStats(questions, rowCount)));
+    }
+  };
+
   return (
-    <div className="flex h-full overflow-hidden bg-[#050505]">
-      <aside className="w-80 border-r border-white/5 flex flex-col shrink-0 bg-black/40 backdrop-blur-xl">
+    <div className="flex flex-col md:flex-row h-full overflow-hidden bg-[#050505]">
+      <aside className="w-full md:w-80 max-h-[50vh] md:max-h-none border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0 bg-black/40 backdrop-blur-xl overflow-hidden">
         <div className="p-5 border-b border-white/5">
           <h2 className="text-lg font-serif italic text-white/80">
             {editingIndex !== null ? 'Modify Field' : 'Design Schema'}
@@ -437,12 +462,17 @@ function HomeContent() {
                   { value: 'email', label: 'Email (Person)' },
                 ]}
               />
-              <Input
-                label="Field Name"
-                name="title"
-                control={qControl}
-                placeholder="e.g. Employee ID"
-              />
+              <div>
+                <Input
+                  label="Field Name"
+                  name="title"
+                  control={qControl}
+                  placeholder="e.g. Employee ID"
+                />
+                <p className="text-[10px] text-white/25 font-sans mt-1">
+                  Letters, spaces &amp; special characters allowed
+                </p>
+              </div>
               <AnimatePresence mode="wait">
                 {selectedType === 'choices' && (
                   <motion.div
@@ -455,7 +485,8 @@ function HomeContent() {
                       label="Options"
                       name="choices"
                       control={qControl}
-                      placeholder="Active&#10;Inactive"
+                      placeholder="Active, Inactive, Pending"
+                      hint="Enter options separated by commas"
                     />
                   </motion.div>
                 )}
@@ -480,6 +511,11 @@ function HomeContent() {
                         control={qControl}
                         type="number"
                       />
+                      <p className="text-[10px] text-white/25 font-sans mt-1">
+                        {multiplierVal > 1
+                          ? `Generates ${(minVal * multiplierVal).toLocaleString()} – ${(maxVal * multiplierVal).toLocaleString()}`
+                          : 'Multiply result by a factor, e.g. ×1000 → salary range'}
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -532,7 +568,12 @@ function HomeContent() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="section-label">Schema Components (Click to Edit)</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="section-label whitespace-nowrap">Schema Components</h3>
+              <span className="text-[10px] text-white/20 font-mono flex-shrink-0">
+                {questions.length} field{questions.length !== 1 ? 's' : ''}
+              </span>
+            </div>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -593,11 +634,18 @@ function HomeContent() {
           </div>
           <div className="flex gap-2">
             <button
+              onClick={handleRegenerate}
+              className="secondary-button !py-1.5 !px-3 flex items-center gap-2"
+              title="Generate a fresh set of random values"
+            >
+              <Shuffle size={14} /> <span className="text-xs">Regenerate</span>
+            </button>
+            <button
               onClick={handleCopyTable}
               className={`secondary-button !py-1.5 !px-3 flex items-center gap-2 transition-all ${copied ? 'border-green-500/50 text-green-400' : ''}`}
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}{' '}
-              <span className="text-xs">{copied ? 'Copied' : 'Copy for Sheets'}</span>
+              <span className="text-xs">{copied ? 'Copied' : 'Copy for Google Sheets'}</span>
             </button>
             <button
               onClick={() => {
@@ -649,6 +697,9 @@ function HomeContent() {
                           strategy={horizontalListSortingStrategy}
                         >
                           <tr>
+                            <th className="px-4 py-3 font-semibold text-white/20 uppercase tracking-wider text-left w-10 select-none">
+                              #
+                            </th>
                             {questions.map((q) => (
                               <SortableHeader key={q.id} q={q} />
                             ))}
@@ -658,6 +709,9 @@ function HomeContent() {
                       <tbody className="divide-y divide-white/[0.03]">
                         {generation.map((row, i) => (
                           <tr key={i} className="hover:bg-white/[0.01] transition-colors">
+                            <td className="px-4 py-3 text-white/20 font-mono text-[10px] w-10 select-none">
+                              {i + 1}
+                            </td>
                             {row.map((val, j) => (
                               <td key={j} className="px-4 py-3 text-white/60 whitespace-nowrap">
                                 {val}
