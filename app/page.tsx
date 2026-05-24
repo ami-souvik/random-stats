@@ -17,6 +17,9 @@ import {
   Files,
   Layers,
   Shuffle,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm, Controller, Control } from 'react-hook-form';
@@ -291,6 +294,7 @@ function HomeContent() {
   const rowCount = useSelector((state: RootState) => state.data.count);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isAsideOpen, setIsAsideOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
 
@@ -384,6 +388,7 @@ function HomeContent() {
   const startEditing = (index: number) => {
     const field = questions[index];
     setEditingIndex(index);
+    setIsAsideOpen(true);
     resetQ({
       type: field.type,
       title: field.title,
@@ -436,216 +441,246 @@ function HomeContent() {
 
   return (
     <div className="flex flex-col md:flex-row h-full overflow-hidden bg-[#050505]">
-      <aside className="w-full md:w-80 max-h-[50vh] md:max-h-none border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0 bg-black/40 backdrop-blur-xl overflow-hidden">
-        <div className="p-5 border-b border-white/5">
-          <h2 className="text-lg font-serif italic text-white/80">
-            {editingIndex !== null ? 'Modify Field' : 'Design Schema'}
-          </h2>
-          <p className="text-[11px] text-white/30 uppercase tracking-tighter mt-1 font-sans">
-            {editingIndex !== null ? 'Adjust configuration then save' : 'Build your data structure'}
-          </p>
+      {/* Mobile backdrop */}
+      <div
+        className={`md:hidden fixed inset-0 z-30 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${isAsideOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsAsideOpen(false)}
+      />
+
+      {/* Sidebar — bottom sheet on mobile, static column on desktop */}
+      <aside
+        className={`fixed inset-x-0 bottom-0 z-40 flex flex-col max-h-[90vh] rounded-t-2xl bg-[#0d0d0d] border-t border-white/[0.08] transition-transform duration-300 ease-in-out ${isAsideOpen ? 'translate-y-0' : 'translate-y-full'} md:translate-y-0 md:static md:inset-auto md:rounded-none md:border-t-0 md:w-80 md:max-h-none md:h-full md:flex md:flex-col md:shrink-0 md:border-r md:border-white/5 md:bg-black/40 md:backdrop-blur-xl md:overflow-hidden`}
+      >
+        {/* Drag handle — mobile only */}
+        <div
+          className="md:hidden flex justify-center pt-3 pb-1 shrink-0 cursor-pointer"
+          onClick={() => setIsAsideOpen(false)}
+        >
+          <div className="w-10 h-1 rounded-full bg-white/20" />
         </div>
 
-        <div className="flex-grow overflow-y-auto p-5 space-y-8">
-          <div className="space-y-4">
-            <h3 className="section-label">Field Details</h3>
-            <form onSubmit={handleQSubmit(onAddOrUpdateField)} className="space-y-4">
-              <Select
-                label="Field Type"
-                name="type"
-                control={qControl}
-                options={[
-                  { value: 'choices', label: 'Multiple Choice' },
-                  { value: 'number', label: 'Logic Number' },
-                  { value: 'auto_number', label: 'Auto-Serial' },
-                  { value: 'name', label: 'Full Name (Person)' },
-                  { value: 'email', label: 'Email (Person)' },
-                ]}
-              />
-              <div>
-                <Input
-                  label="Field Name"
-                  name="title"
+        {/* Header */}
+        <div className="px-5 py-4 md:py-5 border-b border-white/5 flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-lg font-serif italic text-white/80">
+              {editingIndex !== null ? 'Modify Field' : 'Design Schema'}
+            </h2>
+            <p className="text-[11px] text-white/30 uppercase tracking-tighter mt-0.5 font-sans">
+              {editingIndex !== null
+                ? 'Adjust configuration then save'
+                : 'Build your data structure'}
+            </p>
+          </div>
+          <button
+            className="md:hidden text-white/30 hover:text-white/60 transition-colors p-1 -mr-1"
+            onClick={() => setIsAsideOpen(false)}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+          <div className="flex-grow overflow-y-auto p-5 space-y-8">
+            <div className="space-y-4">
+              <h3 className="section-label">Field Details</h3>
+              <form onSubmit={handleQSubmit(onAddOrUpdateField)} className="space-y-4">
+                <Select
+                  label="Field Type"
+                  name="type"
                   control={qControl}
-                  placeholder="e.g. Employee ID"
+                  options={[
+                    { value: 'choices', label: 'Multiple Choice' },
+                    { value: 'number', label: 'Logic Number' },
+                    { value: 'auto_number', label: 'Auto-Serial' },
+                    { value: 'name', label: 'Full Name (Person)' },
+                    { value: 'email', label: 'Email (Person)' },
+                  ]}
                 />
-                <p className="text-[10px] text-white/25 font-sans mt-1">
-                  Letters, spaces &amp; special characters allowed
-                </p>
-              </div>
-              <AnimatePresence mode="wait">
-                {selectedType === 'choices' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    key="choices"
-                  >
-                    <TextArea
-                      label="Options"
-                      name="choices"
-                      control={qControl}
-                      placeholder="Active, Inactive, Pending"
-                      hint="Enter options separated by commas"
-                    />
-                  </motion.div>
-                )}
-                {selectedType === 'number' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    key="number"
-                    className="grid grid-cols-2 gap-3"
-                  >
-                    <div className="col-span-1">
-                      <Input label="Min" name="min" control={qControl} type="number" />
-                    </div>
-                    <div className="col-span-1">
-                      <Input label="Max" name="max" control={qControl} type="number" />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        label="Multiplier"
-                        name="multiplier"
-                        control={qControl}
-                        type="number"
-                      />
-                      <p className="text-[10px] text-white/25 font-sans mt-1">
-                        {multiplierVal > 1
-                          ? `Generates ${(minVal * multiplierVal).toLocaleString()} – ${(maxVal * multiplierVal).toLocaleString()}`
-                          : 'Multiply result by a factor, e.g. ×1000 → salary range'}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-                {selectedType === 'auto_number' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    key="auto"
-                  >
-                    <Input
-                      label="Prefix Text"
-                      name="prefix"
-                      control={qControl}
-                      placeholder="e.g. EMP "
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div className="flex gap-2 mt-2">
-                <button
-                  type="submit"
-                  className="premium-button flex-grow flex items-center justify-center gap-2"
-                >
-                  {editingIndex !== null ? <RotateCcw size={14} /> : <Plus size={14} />}
-                  <span>{editingIndex !== null ? 'Update Field' : 'Append Field'}</span>
-                </button>
-                {editingIndex !== null && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingIndex(null);
-                      resetQ({
-                        type: 'choices',
-                        title: '',
-                        choices: '',
-                        min: 0,
-                        max: 100,
-                        multiplier: 1,
-                        prefix: '',
-                      });
-                    }}
-                    className="secondary-button px-3"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="section-label whitespace-nowrap">Schema Components</h3>
-              <span className="text-[10px] text-white/20 font-mono flex-shrink-0">
-                {questions.length} field{questions.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={questions.map((q) => q.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {questions.map((q, idx) => (
-                    <SortableSchemaItem
-                      key={q.id}
-                      q={q}
-                      index={idx}
-                      onDelete={(i) => {
-                        if (editingIndex === i) setEditingIndex(null);
-                        dispatch(deleteQuestion(i));
-                      }}
-                      onEdit={startEditing}
-                      onClone={(i) => dispatch(cloneQuestion(i))}
-                      isEditing={editingIndex === idx}
-                    />
-                  ))}
+                <div>
+                  <Input
+                    label="Field Name"
+                    name="title"
+                    control={qControl}
+                    placeholder="e.g. Employee ID"
+                  />
+                  <p className="text-[10px] text-white/25 font-sans mt-1">
+                    Letters, spaces &amp; special characters allowed
+                  </p>
                 </div>
-              </SortableContext>
-            </DndContext>
-          </div>
-        </div>
+                <AnimatePresence mode="wait">
+                  {selectedType === 'choices' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      key="choices"
+                    >
+                      <TextArea
+                        label="Options"
+                        name="choices"
+                        control={qControl}
+                        placeholder="Active, Inactive, Pending"
+                        hint="Enter options separated by commas"
+                      />
+                    </motion.div>
+                  )}
+                  {selectedType === 'number' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      key="number"
+                      className="grid grid-cols-2 gap-3"
+                    >
+                      <div className="col-span-1">
+                        <Input label="Min" name="min" control={qControl} type="number" />
+                      </div>
+                      <div className="col-span-1">
+                        <Input label="Max" name="max" control={qControl} type="number" />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          label="Multiplier"
+                          name="multiplier"
+                          control={qControl}
+                          type="number"
+                        />
+                        <p className="text-[10px] text-white/25 font-sans mt-1">
+                          {multiplierVal > 1
+                            ? `Generates ${(minVal * multiplierVal).toLocaleString()} – ${(maxVal * multiplierVal).toLocaleString()}`
+                            : 'Multiply result by a factor, e.g. ×1000 → salary range'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                  {selectedType === 'auto_number' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      key="auto"
+                    >
+                      <Input
+                        label="Prefix Text"
+                        name="prefix"
+                        control={qControl}
+                        placeholder="e.g. EMP "
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="submit"
+                    className="premium-button flex-grow flex items-center justify-center gap-2"
+                  >
+                    {editingIndex !== null ? <RotateCcw size={14} /> : <Plus size={14} />}
+                    <span>{editingIndex !== null ? 'Update Field' : 'Append Field'}</span>
+                  </button>
+                  {editingIndex !== null && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingIndex(null);
+                        resetQ({
+                          type: 'choices',
+                          title: '',
+                          choices: '',
+                          min: 0,
+                          max: 100,
+                          multiplier: 1,
+                          prefix: '',
+                        });
+                      }}
+                      className="secondary-button px-3"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
 
-        <div className="p-5 border-t border-white/5 bg-black/60">
-          <Input
-            label="Row Count"
-            name="count"
-            control={gControl}
-            type="number"
-            placeholder="Count"
-            onChange={(val) => dispatch(setCount(Number(val)))}
-          />
-          <p className="text-[10px] text-white/20 mt-3 flex items-center gap-1">
-            <Database size={10} /> Live sync enabled
-          </p>
-        </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="section-label whitespace-nowrap">Schema Components</h3>
+                <span className="text-[10px] text-white/20 font-mono flex-shrink-0">
+                  {questions.length} field{questions.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={questions.map((q) => q.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {questions.map((q, idx) => (
+                      <SortableSchemaItem
+                        key={q.id}
+                        q={q}
+                        index={idx}
+                        onDelete={(i) => {
+                          if (editingIndex === i) setEditingIndex(null);
+                          dispatch(deleteQuestion(i));
+                        }}
+                        onEdit={startEditing}
+                        onClone={(i) => dispatch(cloneQuestion(i))}
+                        isEditing={editingIndex === idx}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          </div>
+
+          <div className="p-5 border-t border-white/5 bg-black/60">
+            <Input
+              label="Row Count"
+              name="count"
+              control={gControl}
+              type="number"
+              placeholder="Count"
+              onChange={(val) => dispatch(setCount(Number(val)))}
+            />
+            <p className="text-[10px] text-white/20 mt-3 flex items-center gap-1">
+              <Database size={10} /> Live sync enabled
+            </p>
+          </div>
       </aside>
 
       <main className="flex-grow flex flex-col min-w-0 bg-black">
-        <div className="px-6 py-4 flex justify-between items-center border-b border-white/5 bg-black/40 backdrop-blur-md">
-          <div className="flex items-center gap-3">
+        <div className="px-4 md:px-6 py-3 md:py-4 flex justify-between items-center gap-2 border-b border-white/5 bg-black/40 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-medium text-white/70">Engine Online</span>
             <button
               onClick={handleShare}
-              className={`ml-2 px-3 py-1 rounded-full border border-white/5 text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-white/5 transition-all ${shared ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}
+              className={`ml-1 px-2.5 py-1 rounded-full border border-white/5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 hover:bg-white/5 transition-all ${shared ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}
             >
               {shared ? <Check size={10} /> : <LinkIcon size={10} />}
-              {shared ? 'Link Copied' : 'Share Schema'}
+              <span className="hidden sm:inline">{shared ? 'Link Copied' : 'Share Schema'}</span>
             </button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 shrink-0">
             <button
               onClick={handleRegenerate}
-              className="secondary-button !py-1.5 !px-3 flex items-center gap-2"
-              title="Generate a fresh set of random values"
+              className="secondary-button !py-1.5 !px-2.5 flex items-center gap-1.5"
+              title="Regenerate"
             >
-              <Shuffle size={14} /> <span className="text-xs">Regenerate</span>
+              <Shuffle size={13} />
+              <span className="hidden sm:inline text-xs">Regenerate</span>
             </button>
             <button
               onClick={handleCopyTable}
-              className={`secondary-button !py-1.5 !px-3 flex items-center gap-2 transition-all ${copied ? 'border-green-500/50 text-green-400' : ''}`}
+              className={`secondary-button !py-1.5 !px-2.5 flex items-center gap-1.5 transition-all ${copied ? 'border-green-500/50 text-green-400' : ''}`}
+              title="Copy for Google Sheets"
             >
-              {copied ? <Check size={14} /> : <Copy size={14} />}{' '}
-              <span className="text-xs">{copied ? 'Copied' : 'Copy for Google Sheets'}</span>
+              {copied ? <Check size={13} /> : <Copy size={13} />}
+              <span className="hidden sm:inline text-xs">{copied ? 'Copied' : 'Copy for Sheets'}</span>
             </button>
             <button
               onClick={() => {
@@ -657,9 +692,11 @@ function HomeContent() {
                 a.download = `data-${Date.now()}.csv`;
                 a.click();
               }}
-              className="secondary-button !py-1.5 !px-3 flex items-center gap-2"
+              className="secondary-button !py-1.5 !px-2.5 flex items-center gap-1.5"
+              title="Download CSV"
             >
-              <Download size={14} /> <span className="text-xs">CSV</span>
+              <Download size={13} />
+              <span className="hidden sm:inline text-xs">CSV</span>
             </button>
             <button
               onClick={() => {
@@ -668,61 +705,61 @@ function HomeContent() {
                 XLSX.utils.book_append_sheet(wb, ws, 'Data');
                 XLSX.writeFile(wb, `data-${Date.now()}.xlsx`);
               }}
-              className="secondary-button !py-1.5 !px-3 flex items-center gap-2"
+              className="secondary-button !py-1.5 !px-2.5 flex items-center gap-1.5"
+              title="Download XLSX"
             >
-              <FileSpreadsheet size={14} /> <span className="text-xs">XLSX</span>
+              <FileSpreadsheet size={13} />
+              <span className="hidden sm:inline text-xs">XLSX</span>
             </button>
           </div>
         </div>
 
-        <div className="flex-grow overflow-auto p-6">
+        <div className="flex-grow overflow-auto p-4 md:p-6 pb-20 md:pb-6">
           <AnimatePresence mode="wait">
             {generation.length > 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="glass-card overflow-hidden"
+                className="glass-card overflow-x-auto"
               >
-                <div className="overflow-x-auto">
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <table className="w-full text-left text-[11px] leading-tight">
-                      <thead className="bg-white/[0.02] border-b border-white/5">
-                        <SortableContext
-                          items={questions.map((q) => q.id)}
-                          strategy={horizontalListSortingStrategy}
-                        >
-                          <tr>
-                            <th className="px-4 py-3 font-semibold text-white/20 uppercase tracking-wider text-left w-10 select-none">
-                              #
-                            </th>
-                            {questions.map((q) => (
-                              <SortableHeader key={q.id} q={q} />
-                            ))}
-                          </tr>
-                        </SortableContext>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.03]">
-                        {generation.map((row, i) => (
-                          <tr key={i} className="hover:bg-white/[0.01] transition-colors">
-                            <td className="px-4 py-3 text-white/20 font-mono text-[10px] w-10 select-none">
-                              {i + 1}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <table className="min-w-full text-left text-[11px] leading-tight">
+                    <thead className="bg-white/[0.02] border-b border-white/5">
+                      <SortableContext
+                        items={questions.map((q) => q.id)}
+                        strategy={horizontalListSortingStrategy}
+                      >
+                        <tr>
+                          <th className="px-4 py-3 font-semibold text-white/20 uppercase tracking-wider text-left w-10 select-none">
+                            #
+                          </th>
+                          {questions.map((q) => (
+                            <SortableHeader key={q.id} q={q} />
+                          ))}
+                        </tr>
+                      </SortableContext>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.03]">
+                      {generation.map((row, i) => (
+                        <tr key={i} className="hover:bg-white/[0.01] transition-colors">
+                          <td className="px-4 py-3 text-white/20 font-mono text-[10px] w-10 select-none">
+                            {i + 1}
+                          </td>
+                          {row.map((val, j) => (
+                            <td key={j} className="px-4 py-3 text-white/60 whitespace-nowrap">
+                              {val}
                             </td>
-                            {row.map((val, j) => (
-                              <td key={j} className="px-4 py-3 text-white/60 whitespace-nowrap">
-                                {val}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </DndContext>
-                </div>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </DndContext>
               </motion.div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
@@ -738,6 +775,23 @@ function HomeContent() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Mobile bottom trigger bar */}
+      <button
+        className="md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-white/[0.08] bg-black/95 backdrop-blur-md px-5 py-3.5 flex items-center justify-between"
+        onClick={() => setIsAsideOpen(true)}
+      >
+        <div className="flex items-center gap-2.5">
+          <SlidersHorizontal size={14} className="text-white/40" />
+          <span className="font-serif italic text-sm text-white/70">Design Schema</span>
+          {questions.length > 0 && (
+            <span className="text-[9px] font-mono text-white/30 border border-white/10 px-2 py-0.5 rounded-full">
+              {questions.length} {questions.length !== 1 ? 'fields' : 'field'}
+            </span>
+          )}
+        </div>
+        <ChevronUp size={14} className="text-white/30" />
+      </button>
     </div>
   );
 }
