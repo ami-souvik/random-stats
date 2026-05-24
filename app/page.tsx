@@ -652,7 +652,7 @@ function HomeContent() {
           </div>
       </aside>
 
-      <main className="flex-grow flex flex-col min-w-0 bg-black">
+      <main className="flex-grow flex flex-col min-w-0 min-h-0 bg-black">
         <div className="px-4 md:px-6 py-3 md:py-4 flex justify-between items-center gap-2 border-b border-white/5 bg-black/40 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2 shrink-0">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -714,7 +714,7 @@ function HomeContent() {
           </div>
         </div>
 
-        <div className="flex-grow overflow-auto p-4 md:p-6 pb-20 md:pb-6">
+        <div className="flex-grow overflow-auto min-h-0 p-4 md:p-6 pb-20 md:pb-6">
           <AnimatePresence mode="wait">
             {generation.length > 0 ? (
               <motion.div

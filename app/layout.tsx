@@ -45,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="section-label">Synthetic Data Engine</div>
             </header>
             <HeroBanner />
-            <main className="flex-grow overflow-hidden">{children}</main>
+            <main className="flex-grow overflow-hidden min-h-0">{children}</main>
           </div>
         </Providers>
       </body>
